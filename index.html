@@ -455,17 +455,22 @@ function saveLocal(d){localStorage.setItem(LOCAL_KEY,JSON.stringify(d))}
 async function apiGet(key){
   if(!apiUrl)return null;
   try{
-    const r=await fetch(apiUrl+'?key='+encodeURIComponent(key),{cache:'no-cache'});
-    const j=await r.json();
+    const url=apiUrl+'?key='+encodeURIComponent(key)+'&t='+Date.now();
+    const r=await fetch(url,{redirect:'follow'});
+    const text=await r.text();
+    const j=JSON.parse(text);
     return j.ok?j.value:null;
-  }catch{return null}
+  }catch(e){console.log('GET err',e);return null}
 }
 async function apiSet(key,value){
   if(!apiUrl)return false;
   try{
-    await fetch(apiUrl,{method:'POST',body:JSON.stringify({key,value}),headers:{'Content-Type':'application/json'}});
-    return true;
-  }catch{return false}
+    const url=apiUrl+'?key='+encodeURIComponent(key)+'&value='+encodeURIComponent(value)+'&t='+Date.now();
+    const r=await fetch(url,{redirect:'follow'});
+    const text=await r.text();
+    const j=JSON.parse(text);
+    return j.ok;
+  }catch(e){console.log('SET err',e);return false}
 }
 async function pushData(){
   setSyncStatus('loading','上傳中...');
