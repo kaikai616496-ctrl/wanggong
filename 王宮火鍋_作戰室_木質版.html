@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f5ede0">
+<title>🏯 王宮火鍋｜作戰室</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#f5ede0;--gold:#8b5e3c;--gold2:#a07040;--dim:#ede0ce;--card:#fdf6ec;--border:#d4b896;--text:#3a2a1a;--muted:#9a7d62;--green:#5a8a4a;--red:#b84a3a;--amber:#c07a2a;--blue:#5a7a9a;--purple:#7a6a8a;--r:12px;--serif:'Noto Serif TC',serif;--sans:'Noto Sans TC',sans-serif}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--ink);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;display:flex;flex-direction:column}
+
+/* sync bar */
+#sync-bar{padding:6px 16px;background:#e0c8a8;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;min-height:36px}
+#sync-status{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+#sync-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s}
+#sync-dot.ok{background:var(--green)} #sync-dot.err{background:var(--red)} #sync-dot.loading{background:var(--amber);animation:pulse 1s infinite} #sync-dot{background:var(--muted)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+#sync-setup-btn{font-size:11px;color:var(--gold);background:none;border:1px solid rgba(200,169,110,.3);border-radius:20px;padding:3px 10px;cursor:pointer;font-family:var(--sans)}
+#sync-setup-btn:hover{background:rgba(200,169,110,.1)}
+
+/* header */
+.header{background:linear-gradient(160deg,#e8d5be,#d4c0a0);border-bottom:1px solid var(--border);padding:14px 16px 12px;flex-shrink:0}
+.header-top{display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-icon{font-size:20px}
+.brand-name{font-family:var(--serif);font-size:15px;font-weight:700;color:var(--gold);letter-spacing:.04em}
+.brand-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.save-btn{background:var(--gold);color:#fff;border:none;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .2s}
+.save-btn.saved{background:var(--green);color:#fff;}
+.tabs{display:flex;gap:4px;margin-top:12px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;background:var(--dim);border:1px solid var(--border);border-radius:20px;padding:5px 13px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap}
+.tab.active{background:var(--gold);color:#fff;font-weight:700;border-color:var(--gold)}
+
+/* content */
+.content-wrap{flex:1;overflow-y:auto;overflow-x:hidden}
+.content{padding:14px 16px 100px;display:none}
+.content.active{display:block}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:12px}
+.card-title{font-family:var(--serif);font-size:13px;font-weight:600;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+
+/* kpi */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.kpi-label{font-size:10px;color:var(--muted);margin-bottom:4px}
+.kpi-val{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--gold2)}
+.kpi-sub{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* form */
+.field-row{margin-bottom:10px}
+.field-label{font-size:11px;color:var(--muted);margin-bottom:4px}
+.field-input,.field-textarea{width:100%;background:var(--dim);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--sans);font-size:14px;outline:none;transition:border-color .2s;-webkit-appearance:none}
+.field-input:focus,.field-textarea:focus{border-color:var(--gold)}
+.field-textarea{resize:vertical;min-height:80px}
+
+/* checklist */
+.check-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.check-item:last-child{border-bottom:none}
+.check-box{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-top:1px}
+.check-box.checked{background:var(--green);border-color:var(--green)}
+.check-box.checked::after{content:"✓";color:#fff;font-size:11px;font-weight:700}
+.check-label{font-size:13px;flex:1;line-height:1.5}
+.check-label.done{text-decoration:line-through;color:var(--muted)}
+
+/* month table */
+.month-row{display:grid;grid-template-columns:44px 1fr 72px 56px;gap:6px;padding:8px 0;border-bottom:1px solid var(--border);align-items:center}
+.month-row:last-child{border-bottom:none}
+.month-row.current{background:rgba(200,169,110,.07);border-radius:8px;padding:8px 6px;margin:0 -6px}
+.month-name{font-weight:600;font-size:13px;color:var(--gold)}
+.month-target{font-size:11px;color:var(--muted)}
+.month-input{background:var(--dim);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px;text-align:center;outline:none;width:100%;-webkit-appearance:none}
+.month-input:focus{border-color:var(--gold)}
+.achieve-badge{font-size:11px;font-weight:700;padding:2px 6px;border-radius:10px;text-align:center}
+.badge-g{background:rgba(76,175,130,.2);color:var(--green)}
+.badge-a{background:rgba(232,169,58,.2);color:var(--amber)}
+.badge-r{background:rgba(224,92,106,.2);color:var(--red)}
+.badge-gray{background:rgba(106,106,138,.15);color:var(--muted)}
+
+/* reminder */
+.reminder-card{background:linear-gradient(135deg,#f0e0c8,#e8d0b0);border:1px solid #c4a070;border-radius:var(--r);padding:14px 16px;margin-bottom:12px}
+.reminder-time{font-family:var(--serif);font-size:28px;font-weight:700;color:var(--gold)}
+.reminder-title{font-size:13px;font-weight:600;margin:4px 0 2px}
+.reminder-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.reminder-btn{margin-top:10px;width:100%;background:transparent;border:1px solid var(--gold);border-radius:8px;padding:8px;color:var(--gold);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .2s}
+
+/* tag */
+.tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600}
+.t-g{background:rgba(76,175,130,.2);color:var(--green)}
+.t-r{background:rgba(224,92,106,.2);color:var(--red)}
+.t-a{background:rgba(232,169,58,.2);color:var(--amber)}
+
+/* progress */
+.prog-wrap{height:6px;background:var(--dim);border-radius:3px;overflow:hidden;margin-top:6px}
+.prog-fill{height:100%;border-radius:3px;transition:width .5s}
+
+/* bottom nav */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(245,237,224,.97);border-top:1px solid var(--border);display:flex;padding:8px 0 20px;z-index:200;backdrop-filter:blur(16px)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:10px;font-family:var(--sans);padding:4px 0;transition:color .2s}
+.nav-btn.active{color:var(--gold)}
+.nav-icon{font-size:18px}
+
+/* toast */
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-16px);background:var(--green);color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* modal */
+.modal-wrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;padding:20px;align-items:flex-end}
+.modal-wrap.open{display:flex}
+.modal-box{background:#fdf6ec;border:1px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:460px;margin:0 auto}
+.modal-title{font-family:var(--serif);font-size:15px;font-weight:600;color:var(--gold);margin-bottom:12px}
+.modal-body{font-size:13px;line-height:1.8;color:var(--text);margin-bottom:16px}
+.modal-input{width:100%;background:var(--dim);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;outline:none;font-family:var(--sans);margin-bottom:8px}
+.modal-input:focus{border-color:var(--gold)}
+.modal-row{display:flex;gap:8px}
+.modal-btn{flex:1;padding:10px;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;font-family:var(--sans);transition:all .2s}
+.modal-btn.primary{background:var(--gold);color:#1a1a2e;border:none}
+.modal-btn.secondary{background:transparent;color:var(--muted);border:1px solid var(--border)}
+
+.sep{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 10px}
+.phase-block{border-radius:var(--r);padding:12px 14px;margin-bottom:8px}
+.ph1{background:rgba(180,80,60,.08);border:1px solid rgba(180,80,60,.25)}
+.ph2{background:rgba(180,120,40,.08);border:1px solid rgba(180,120,40,.25)}
+.ph3{background:rgba(70,130,70,.08);border:1px solid rgba(70,130,70,.25)}
+.ph1 .phase-hd{font-size:13px;font-weight:600;color:var(--red);margin-bottom:6px}
+.ph2 .phase-hd{font-size:13px;font-weight:600;color:var(--amber);margin-bottom:6px}
+.ph3 .phase-hd{font-size:13px;font-weight:600;color:var(--green);margin-bottom:6px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card,.kpi,.reminder-card{animation:fadeUp .3s ease both}
+
+/* setup guide */
+.guide-step{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.guide-step:last-child{border-bottom:none}
+.guide-num{width:24px;height:24px;border-radius:50%;background:rgba(91,155,213,.2);color:var(--blue);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.guide-text{font-size:13px;line-height:1.6;color:var(--text)}
+.guide-sub{font-size:11px;color:var(--muted);margin-top:3px}
+code{background:#e8d5be;border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:11px;color:var(--gold);font-family:monospace}
+</style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<!-- Sync bar -->
+<div id="sync-bar">
+  <div id="sync-status">
+    <div id="sync-dot"></div>
+    <span id="sync-text">未連接 Google Sheets — 資料存在本機</span>
+  </div>
+  <button id="sync-setup-btn" onclick="openSetup()">⚙ 設定同步</button>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-top">
+    <div class="brand">
+      <div class="brand-icon">🏯</div>
+      <div>
+        <div class="brand-name">王宮火鍋｜作戰室</div>
+        <div class="brand-sub" id="last-sync-label">2026/05/07</div>
+      </div>
+    </div>
+    <button class="save-btn" id="saveBtn" onclick="saveAll()">儲存</button>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('today')">⚡ 今日</div>
+    <div class="tab" onclick="switchTab('goals')">🎯 目標</div>
+    <div class="tab" onclick="switchTab('actions')">🚀 行動</div>
+    <div class="tab" onclick="switchTab('brand')">🏷️ 品牌</div>
+    <div class="tab" onclick="switchTab('reminder')">⏰ 提醒</div>
+    <div class="tab" onclick="switchTab('finance')">💰 財務</div>
+    <div class="tab" onclick="switchTab('setup')">☁️ 同步</div>
+  </div>
+</div>
+
+<div class="content-wrap">
+
+<!-- TODAY -->
+<div class="content active" id="tab-today">
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">今日來客目標</div><div class="kpi-val">47</div><div class="kpi-sub">人/天</div></div>
+    <div class="kpi"><div class="kpi-label">今日營收目標</div><div class="kpi-val">$22k</div><div class="kpi-sub">元/天</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">✍️ 今日唯一最重要任務</div>
+    <textarea class="field-textarea" id="today-task" placeholder="今天只有一件最重要的事是什麼？" style="min-height:56px" oninput="markDirty()"></textarea>
+    <div style="font-size:11px;color:var(--muted);margin-top:6px">明天自動清空重寫</div>
+  </div>
+  <div class="card"><div class="card-title">🌅 早上 09:30 清單</div><div id="morning-checks"></div></div>
+  <div class="card"><div class="card-title">🌙 晚上 21:30 清單</div><div id="evening-checks"></div></div>
+  <div class="card">
+    <div class="card-title">📝 今日備註</div>
+    <textarea class="field-textarea" id="today-note" placeholder="異常狀況、客人反應..." oninput="markDirty()"></textarea>
+  </div>
+</div>
+
+<!-- GOALS -->
+<div class="content" id="tab-goals">
+  <div class="card">
+    <div class="card-title">🏆 終極目標</div>
+    <div style="text-align:center;padding:8px 0 4px">
+      <div style="font-family:var(--serif);font-size:32px;font-weight:700;color:var(--gold)">$1,000,000</div>
+      <div style="font-size:11px;color:var(--muted)">2026年10月｜月盈餘預估 $233,338（23.3%）</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-fill" id="year-progress" style="background:linear-gradient(90deg,var(--gold),var(--gold2));width:0%"></div></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right" id="year-progress-label">尚無數據</div>
+  </div>
+  <div class="card">
+    <div class="card-title">📅 2026 月份目標</div>
+    <div style="display:grid;grid-template-columns:44px 1fr 72px 56px;gap:6px;padding:4px 0;font-size:10px;color:var(--muted);font-weight:600">
+      <span>月份</span><span>目標</span><span>實際營收</span><span>達成</span>
+    </div>
+    <div id="month-table"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 核心指標</div>
+    <div id="metrics-list"></div>
+  </div>
+</div>
+
+<!-- ACTIONS -->
+<div class="content" id="tab-actions">
+  <div class="phase-block ph1"><div class="phase-hd">🔴 第一階段｜5–6月：建留客機制</div><div id="phase1-checks"></div></div>
+  <div class="phase-block ph2" style="margin-top:0"><div class="phase-hd">🟡 第二階段｜7–8月：擴大曝光</div><div id="phase2-checks"></div></div>
+  <div class="phase-block ph3" style="margin-top:0"><div class="phase-hd">🟢 第三階段｜9–10月：團隊獨立</div><div id="phase3-checks"></div></div>
+  <div class="card"><div class="card-title">📋 SOP 清單</div><div id="sop-checks"></div></div>
+</div>
+
+<!-- BRAND -->
+<div class="content" id="tab-brand">
+  <div class="card" style="background:linear-gradient(135deg,#e8d0b0,#d4b890);border-color:#c4a070">
+    <div style="text-align:center;padding:6px 0">
+      <div style="font-size:26px;margin-bottom:6px">🏠</div>
+      <div style="font-family:var(--serif);font-size:18px;font-weight:700;color:var(--gold)">「哩鄧來啊喔」</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">阿嬤阿娥的口頭禪｜王宮的品牌招呼語</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">🎯 品牌定位</div>
+    <textarea class="field-textarea" id="brand-positioning" oninput="markDirty()"></textarea>
+  </div>
+  <div class="card">
+    <div class="card-title">📱 IG 簡介</div>
+    <textarea class="field-textarea" id="ig-bio" style="min-height:140px" oninput="markDirty()"></textarea>
+    <button class="reminder-btn" onclick="copyText('ig-bio')" style="margin-top:8px">複製 IG 簡介</button>
+  </div>
+  <div class="card">
+    <div class="card-title">✍️ 品牌故事（菜單/立牌版）</div>
+    <textarea class="field-textarea" id="brand-story" style="min-height:200px" oninput="markDirty()"></textarea>
+  </div>
+</div>
+
+<!-- REMINDER -->
+<div class="content" id="tab-reminder">
+  <div style="background:rgba(200,169,110,.08);border:1px solid rgba(200,169,110,.2);border-radius:var(--r);padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--muted);line-height:1.7">
+    ⚠️ 點下方按鈕會顯示 iPhone 設定鬧鐘的步驟說明。
+  </div>
+  <div class="reminder-card">
+    <div class="reminder-time">09:30</div>
+    <div class="reminder-title">🌅 晨間確認</div>
+    <div class="reminder-desc">看昨日數字 → 寫今日唯一任務 → 確認排班</div>
+    <button class="reminder-btn" onclick="showAlarm('09:30','王宮開店前：看數字＋寫今日任務')">📲 設定此提醒</button>
+  </div>
+  <div class="reminder-card">
+    <div class="reminder-time">21:30</div>
+    <div class="reminder-title">🌙 收攤記錄</div>
+    <div class="reminder-desc">確認員工填數字 → 30秒看來客+營收</div>
+    <button class="reminder-btn" onclick="showAlarm('21:30','王宮收攤：確認數字填報')">📲 設定此提醒</button>
+  </div>
+  <div class="reminder-card">
+    <div class="reminder-time">週五 16:00</div>
+    <div class="reminder-title">📅 週檢視</div>
+    <div class="reminder-desc">本週來客 vs 目標 → 下週三大任務，30分鐘</div>
+    <button class="reminder-btn" onclick="showAlarm('週五16:00','王宮週檢視：本週結果＋下週計畫')">📲 設定此提醒</button>
+  </div>
+</div>
+
+<!-- FINANCE -->
+<div class="content" id="tab-finance">
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">損益平衡點</div><div class="kpi-val" style="font-size:18px">$574k</div><div class="kpi-sub">日均30人</div></div>
+    <div class="kpi"><div class="kpi-label">月固定成本</div><div class="kpi-val" style="font-size:18px">$314k</div><div class="kpi-sub">每月必須支出</div></div>
+    <div class="kpi"><div class="kpi-label">邊際貢獻率</div><div class="kpi-val" style="font-size:18px">54.7%</div><div class="kpi-sub">每元營收貢獻</div></div>
+    <div class="kpi"><div class="kpi-label">多1人/天</div><div class="kpi-val" style="font-size:18px">+$10k</div><div class="kpi-sub">月增利潤</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">💡 目標盈餘對照</div>
+    <div id="finance-table"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📝 本月財務備註</div>
+    <textarea class="field-textarea" id="finance-note" placeholder="本月異常成本、進貨狀況..." oninput="markDirty()"></textarea>
+  </div>
+</div>
+
+<!-- SETUP -->
+<div class="content" id="tab-setup">
+  <div class="card">
+    <div class="card-title">☁️ Google Sheets 同步設定</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:14px">
+      設定完成後，Windows、Mac、iPhone 打開這個作戰室，資料全部同步。
+    </div>
+
+    <div class="sep">步驟一｜建立 Google Sheets</div>
+    <div class="guide-step"><div class="guide-num">1</div><div><div class="guide-text">打開 <strong>sheets.google.com</strong>，登入你的 Google 帳號</div></div></div>
+    <div class="guide-step"><div class="guide-num">2</div><div><div class="guide-text">點「空白試算表」→ 把試算表命名為「王宮作戰室同步」</div></div></div>
+    <div class="guide-step"><div class="guide-num">3</div><div><div class="guide-text">在 A1 輸入 <code>key</code>，B1 輸入 <code>value</code>，建立兩個欄位標題</div></div></div>
+
+    <div class="sep">步驟二｜建立 Apps Script API</div>
+    <div class="guide-step"><div class="guide-num">4</div><div><div class="guide-text">在 Google Sheets 上方選單點「<strong>擴充功能</strong>」→「<strong>Apps Script</strong>」</div></div></div>
+    <div class="guide-step"><div class="guide-num">5</div><div>
+      <div class="guide-text">把原本的程式碼全部刪掉，貼上以下程式碼：</div>
+      <div style="background:#e8d5be;border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-top:8px;font-size:11px;color:#5a4a2a;font-family:monospace;line-height:1.6;overflow-x:auto;white-space:pre">const SS = SpreadsheetApp.getActiveSpreadsheet();
+const SH = SS.getSheets()[0];
+
+function doGet(e) {
+  const key = e.parameter.key;
+  const data = SH.getDataRange().getValues();
+  for (let r of data) {
+    if (r[0] === key) {
+      return ok(r[1]);
+    }
+  }
+  return ok('');
+}
+
+function doPost(e) {
+  const p = JSON.parse(e.postData.contents);
+  const data = SH.getDataRange().getValues();
+  for (let i = 0; i < data.length; i++) {
+    if (data[i][0] === p.key) {
+      SH.getRange(i+1,2).setValue(p.value);
+      return ok('updated');
+    }
+  }
+  SH.appendRow([p.key, p.value]);
+  return ok('created');
+}
+
+function ok(v) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ok:true,value:v}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+    </div></div>
+    <div class="guide-step"><div class="guide-num">6</div><div><div class="guide-text">點上方「<strong>部署</strong>」→「<strong>新增部署</strong>」→ 類型選「<strong>網頁應用程式</strong>」</div></div></div>
+    <div class="guide-step"><div class="guide-num">7</div><div><div class="guide-text">「執行身分」選「<strong>我</strong>」，「誰可以存取」選「<strong>所有人</strong>」→ 點「<strong>部署</strong>」→ 複製出現的「<strong>網頁應用程式網址</strong>」</div></div></div>
+
+    <div class="sep">步驟三｜貼入網址完成連接</div>
+    <div class="guide-step"><div class="guide-num">8</div><div>
+      <div class="guide-text">把複製的網址貼到下方，點「連接」</div>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <input class="modal-input" id="api-url-input" placeholder="https://script.google.com/macros/s/..." style="flex:1;margin-bottom:0">
+        <button class="save-btn" onclick="connectAPI()" style="flex-shrink:0;border-radius:8px">連接</button>
+      </div>
+      <div id="connect-result" style="font-size:11px;margin-top:6px;color:var(--muted)"></div>
+    </div></div>
+
+    <div style="background:rgba(76,175,130,.08);border:1px solid rgba(76,175,130,.2);border-radius:var(--r);padding:10px 14px;margin-top:14px;font-size:12px;color:var(--green);line-height:1.7">
+      ✅ 連接成功後：每次點「儲存」按鈕，資料自動上傳到 Google Sheets。任何裝置開啟作戰室，自動讀取最新資料。
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔧 連線狀態</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:13px">API 網址</span>
+      <span style="font-size:11px;color:var(--muted)" id="api-url-display">未設定</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:13px">同步狀態</span>
+      <span style="font-size:11px" id="sync-status-display">—</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+      <span style="font-size:13px">最後同步</span>
+      <span style="font-size:11px;color:var(--muted)" id="last-sync-display">—</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="reminder-btn" onclick="forcePush()" style="flex:1">立即上傳</button>
+      <button class="reminder-btn" onclick="forcePull()" style="flex:1">立即下載</button>
+    </div>
+    <button class="reminder-btn" onclick="clearAPI()" style="margin-top:8px;border-color:var(--red);color:var(--red)">清除連線設定</button>
+  </div>
+</div>
+
+</div><!-- content-wrap -->
+
+<!-- Bottom Nav -->
+<div class="bottom-nav">
+  <button class="nav-btn active" onclick="switchTab('today')"><span class="nav-icon">⚡</span>今日</button>
+  <button class="nav-btn" onclick="switchTab('goals')"><span class="nav-icon">🎯</span>目標</button>
+  <button class="nav-btn" onclick="switchTab('actions')"><span class="nav-icon">🚀</span>行動</button>
+  <button class="nav-btn" onclick="switchTab('brand')"><span class="nav-icon">🏷️</span>品牌</button>
+  <button class="nav-btn" onclick="switchTab('reminder')"><span class="nav-icon">⏰</span>提醒</button>
+  <button class="nav-btn" onclick="switchTab('finance')"><span class="nav-icon">💰</span>財務</button>
+  <button class="nav-btn" onclick="switchTab('setup')"><span class="nav-icon">☁️</span>同步</button>
+</div>
+
+<!-- Alarm modal -->
+<div class="modal-wrap" id="alarm-modal" onclick="closeModal('alarm-modal',event)">
+  <div class="modal-box">
+    <div class="modal-title" id="alarm-title">設定提醒</div>
+    <div class="modal-body" id="alarm-body"></div>
+    <button class="modal-btn primary" onclick="closeModal('alarm-modal')">知道了</button>
+  </div>
+</div>
+
+<script>
+// ── constants ──────────────────────────────────────
+const MONTHS=[
+  {m:'1月',target:0,past:true},{m:'2月',target:0,past:true},
+  {m:'3月',target:0,past:true},{m:'4月',target:500000,past:true},
+  {m:'5月',target:600000,cur:true},{m:'6月',target:680000},
+  {m:'7月',target:760000},{m:'8月',target:840000},
+  {m:'9月',target:920000},{m:'10月',target:1000000,gold:true},
+  {m:'11月',target:0},{m:'12月',target:0}
+];
+const MORNING=['看昨日營收 & 來客數','寫下今日唯一最重要任務','確認今日排班到位'];
+const EVENING=['確認員工已填今日數字','30秒：今日來客 vs 目標','30秒：今日營收 vs 目標','有異常寫備註'];
+const PHASE1=['開通 Line 官方帳號','設計集點卡（5次送小菜）','Google 商家每週上傳 2 張照片','平日限定優惠（週一到週四）','建立員工每日填報習慣'];
+const PHASE2=['每月拍 2 支 Reels（阿娥故事）','每月拍 2 支 Reels（蛤蠣白醬）','推出「帶朋友來」雙人優惠','聯繫附近3間辦公大樓 HR','Line 官帳累積達 500 人','指定一名正職為代理店長'];
+const PHASE3=['店長能獨立帶班（你每週2天不進店）','建立每月行銷月曆','中秋假期衝刺活動','國慶假期衝刺活動','評估第二間店前置作業','達成月營收 $1,000,000 🏆'];
+const SOP_LIST=['開店流程 SOP','備料標準 SOP','服務話術 SOP（含加購推薦）','員工每日數字填報 SOP','客訴處理 SOP','緊急狀況處理 SOP'];
+const METRICS=[
+  {l:'日均來客',c:'15–18人',t:'47人'},{l:'平均客單價',c:'$641',t:'$710'},
+  {l:'回頭客比例',c:'28.1%',t:'35%+'},{l:'成本率',c:'55–70%',t:'55%以下'},
+  {l:'Line官帳',c:'0人',t:'500人'},{l:'IG粉絲',c:'637',t:'2,000'},
+  {l:'月盈餘率',c:'0–8%',t:'20%+'}
+];
+const FIN=[
+  {l:'損益平衡（0%）',r:'$574k',d:'30人',e:'$0'},
+  {l:'健康盈餘（10%）',r:'$702k',d:'37人',e:'$70k'},
+  {l:'優質盈餘（15%）',r:'$791k',d:'41人',e:'$119k'},
+  {l:'終極目標（20%+）',r:'$905k',d:'47人',e:'$181k'}
+];
+const LOCAL_KEY='wanggong_v4';
+const SYNC_KEY='wanggong_api_v1';
+
+// ── state ──────────────────────────────────────────
+let dirty=false;
+let apiUrl=localStorage.getItem(SYNC_KEY)||'';
+
+// ── local storage ──────────────────────────────────
+function loadLocal(){try{return JSON.parse(localStorage.getItem(LOCAL_KEY)||'{}')}catch{return{}}}
+function saveLocal(d){localStorage.setItem(LOCAL_KEY,JSON.stringify(d))}
+
+// ── sync api ───────────────────────────────────────
+async function apiGet(key){
+  if(!apiUrl)return null;
+  try{
+    const r=await fetch(apiUrl+'?key='+encodeURIComponent(key),{cache:'no-cache'});
+    const j=await r.json();
+    return j.ok?j.value:null;
+  }catch{return null}
+}
+async function apiSet(key,value){
+  if(!apiUrl)return false;
+  try{
+    await fetch(apiUrl,{method:'POST',body:JSON.stringify({key,value}),headers:{'Content-Type':'application/json'}});
+    return true;
+  }catch{return false}
+}
+async function pushData(){
+  setSyncStatus('loading','上傳中...');
+  const d=loadLocal();
+  const ok=await apiSet('wanggong_data',JSON.stringify(d));
+  if(ok){setSyncStatus('ok','已同步 '+fmtTime());updateLastSync()}
+  else{setSyncStatus('err','上傳失敗，已存本機')}
+}
+async function pullData(){
+  if(!apiUrl)return;
+  setSyncStatus('loading','下載中...');
+  const raw=await apiGet('wanggong_data');
+  if(raw&&raw!==''){
+    try{
+      const remote=JSON.parse(raw);
+      saveLocal(remote);
+      loadAll();
+      setSyncStatus('ok','已同步 '+fmtTime());updateLastSync();
+      showToast('已載入最新資料');
+    }catch{setSyncStatus('err','資料解析錯誤')}
+  }else{setSyncStatus('ok','雲端暫無資料，使用本機版本')}
+}
+function fmtTime(){const n=new Date();return n.getHours()+':'+String(n.getMinutes()).padStart(2,'0')}
+function updateLastSync(){
+  const t=new Date().toLocaleString('zh-TW');
+  localStorage.setItem('wanggong_last_sync',t);
+  document.getElementById('last-sync-display').textContent=t;
+  document.getElementById('last-sync-label').textContent='最後同步：'+t;
+}
+function setSyncStatus(state,msg){
+  document.getElementById('sync-dot').className=state==='loading'?'loading':state==='ok'?'ok':'err';
+  document.getElementById('sync-text').textContent=msg;
+  const el=document.getElementById('sync-status-display');
+  if(el){el.textContent=msg;el.style.color=state==='ok'?'var(--green)':state==='err'?'var(--red)':'var(--amber)'}
+}
+async function connectAPI(){
+  const url=document.getElementById('api-url-input').value.trim();
+  const el=document.getElementById('connect-result');
+  if(!url){el.textContent='請輸入網址';el.style.color='var(--red)';return}
+  el.textContent='測試連線中...';el.style.color='var(--amber)';
+  apiUrl=url;localStorage.setItem(SYNC_KEY,url);
+  const ok=await apiSet('test','ping');
+  if(ok){
+    el.textContent='✅ 連線成功！資料將自動同步。';el.style.color='var(--green)';
+    document.getElementById('api-url-display').textContent=url.substring(0,40)+'...';
+    setSyncStatus('ok','已連接 Google Sheets');
+    await pushData();
+  }else{
+    el.textContent='❌ 連線失敗，請確認網址是否正確。';el.style.color='var(--red)';
+    apiUrl='';localStorage.removeItem(SYNC_KEY);
+    setSyncStatus('err','連線失敗');
+  }
+}
+function forcePush(){if(!apiUrl){showToast('請先設定同步');switchTab('setup');return}pushData()}
+async function forcePull(){if(!apiUrl){showToast('請先設定同步');switchTab('setup');return}await pullData()}
+function clearAPI(){
+  apiUrl='';localStorage.removeItem(SYNC_KEY);
+  setSyncStatus('','未連接 Google Sheets — 資料存在本機');
+  document.getElementById('api-url-display').textContent='未設定';
+  document.getElementById('api-url-input').value='';
+  document.getElementById('connect-result').textContent='';
+  showToast('已清除連線設定');
+}
+function openSetup(){switchTab('setup')}
+
+// ── tab ────────────────────────────────────────────
+function switchTab(id){
+  document.querySelectorAll('.content').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  document.querySelector('.content-wrap').scrollTop=0;
+  const map={today:0,goals:1,actions:2,brand:3,reminder:4,finance:5,setup:6};
+  if(map[id]!==undefined){
+    document.querySelectorAll('.tab')[map[id]]?.classList.add('active');
+    document.querySelectorAll('.nav-btn')[map[id]]?.classList.add('active');
+  }
+}
+
+// ── checklist ──────────────────────────────────────
+function buildChecks(cid,items,skey){
+  const d=loadLocal();const state=d[skey]||{};
+  const el=document.getElementById(cid);el.innerHTML='';
+  items.forEach((txt,i)=>{
+    const checked=!!state[i];
+    const div=document.createElement('div');div.className='check-item';
+    div.innerHTML=`<div class="check-box ${checked?'checked':''}" onclick="toggleCheck('${skey}',${i},this)"></div><div class="check-label ${checked?'done':''}">${txt}</div>`;
+    el.appendChild(div);
+  });
+}
+function toggleCheck(skey,idx,box){
+  const d=loadLocal();
+  if(!d[skey])d[skey]={};
+  d[skey][idx]=!d[skey][idx];
+  saveLocal(d);
+  box.classList.toggle('checked');
+  box.nextElementSibling.classList.toggle('done');
+  markDirty();showToast('已更新');
+}
+
+// ── month table ────────────────────────────────────
+function buildMonthTable(){
+  const d=loadLocal();const actuals=d.actuals||{};
+  const el=document.getElementById('month-table');el.innerHTML='';
+  let totalA=0,totalT=0;
+  MONTHS.forEach((m,i)=>{
+    const actual=actuals[i]||'';
+    if(actual)totalA+=parseFloat(actual)||0;
+    if(m.target)totalT+=m.target;
+    const ach=m.target&&actual?(parseFloat(actual)/m.target):null;
+    let badge='<span class="achieve-badge badge-gray">—</span>';
+    if(ach!==null){
+      if(ach>=1)badge='<span class="achieve-badge badge-g">✓</span>';
+      else if(ach>=0.8)badge='<span class="achieve-badge badge-a">'+Math.round(ach*100)+'%</span>';
+      else badge='<span class="achieve-badge badge-r">'+Math.round(ach*100)+'%</span>';
+    }else if(m.cur){badge='<span class="achieve-badge badge-a" style="font-size:9px">進行中</span>'}
+    else if(m.gold){badge='<span class="achieve-badge" style="background:rgba(200,169,110,.2);color:var(--gold)">🏆</span>'}
+    const row=document.createElement('div');
+    row.className='month-row'+(m.cur?' current':'');
+    row.innerHTML=`<span class="month-name">${m.m}</span>
+      <div><div class="month-target">${m.target?'$'+Math.round(m.target/10000)+'萬':'—'}</div></div>
+      <input class="month-input" type="number" placeholder="填入" value="${actual}" onchange="saveActual(${i},this.value)"/>
+      ${badge}`;
+    el.appendChild(row);
+  });
+  const pct=totalT?Math.min(totalA/totalT*100,100):0;
+  document.getElementById('year-progress').style.width=pct+'%';
+  document.getElementById('year-progress-label').textContent=totalA?'累計 $'+Math.round(totalA).toLocaleString()+' / 達成 '+Math.round(pct)+'%':'尚無數據';
+}
+function saveActual(idx,val){
+  const d=loadLocal();if(!d.actuals)d.actuals={};
+  d.actuals[idx]=val;saveLocal(d);buildMonthTable();markDirty();showToast('已儲存');
+}
+
+// ── metrics ────────────────────────────────────────
+function buildMetrics(){
+  document.getElementById('metrics-list').innerHTML=METRICS.map(m=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:13px">${m.l}</span>
+      <div style="text-align:right"><span style="font-size:12px;color:var(--muted)">${m.c}</span>
+      <span style="color:var(--muted);margin:0 4px">→</span>
+      <span style="font-size:12px;color:var(--green);font-weight:600">${m.t}</span></div>
+    </div>`).join('');
+}
+
+// ── finance ────────────────────────────────────────
+function buildFinance(){
+  document.getElementById('finance-table').innerHTML=FIN.map((r,i)=>`
+    <div style="display:grid;grid-template-columns:1fr 56px 44px 64px;gap:6px;padding:9px 0;border-bottom:1px solid var(--border);align-items:center;${i===3?'color:var(--gold);font-weight:600':''}">
+      <span style="font-size:12px">${r.l}</span>
+      <span style="font-size:12px;text-align:center">${r.r}</span>
+      <span style="font-size:12px;text-align:center">${r.d}</span>
+      <span style="font-size:12px;text-align:right;color:var(--green)">${r.e}</span>
+    </div>`).join('');
+}
+
+// ── text fields ────────────────────────────────────
+const TEXT_IDS=['today-task','today-note','finance-note','brand-positioning','ig-bio','brand-story'];
+const DEFAULTS={
+  'brand-positioning':'阿嬤級的滋補鴛鴦鍋 — 兩人剛剛好，一鍋暖到心\n主打：白領、情侶、小家庭\n地點：高雄新興區林森一路10號',
+  'ig-bio':`「哩鄧來啊喔 🏠」\n——這是阿嬤阿娥每次看到我回家說的話。\n她今年 86 歲，燉了一輩子的雞湯。\n我把那鍋湯，變成了王宮火鍋。\n\n🍲 阿嬤級滋補鴛鴦鍋｜蛤蠣白醬 × 十光雞藥膳\n📍 高雄新興區｜不用訂位｜兩人剛剛好`,
+  'brand-story':`小時候身體不好，阿嬤阿娥總會燉上一整鍋雞湯。\n\n不加味精，只放藥材，用文火慢慢煨。\n湯端來的時候，霧氣還沒散，\n她就坐在旁邊，看我一口一口喝完。\n\n那鍋湯的味道，是我記憶裡最溫暖的地方。\n\n長大後開了這間店，\n只想讓更多人喝到那樣的一碗湯——\n不只是補身體，是補心裡那個缺口。\n\n阿娥今年 86 歲了，還是走路有風。\n王宮的每一鍋湯，都為她而煮。`
+};
+function loadTextFields(){
+  const d=loadLocal();
+  TEXT_IDS.forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.value=d[id]!==undefined?d[id]:(DEFAULTS[id]||'');
+  });
+}
+function saveTextFields(){
+  const d=loadLocal();
+  TEXT_IDS.forEach(id=>{const el=document.getElementById(id);if(el)d[id]=el.value;});
+  saveLocal(d);
+}
+function markDirty(){dirty=true}
+
+// ── save all ───────────────────────────────────────
+async function saveAll(){
+  saveTextFields();
+  const btn=document.getElementById('saveBtn');
+  btn.textContent='儲存中...';btn.style.opacity='.7';
+  if(apiUrl){await pushData()}
+  else{setSyncStatus('','資料已存本機（未連接雲端）')}
+  btn.textContent='已儲存 ✓';btn.classList.add('saved');btn.style.opacity='1';
+  dirty=false;
+  setTimeout(()=>{btn.textContent='儲存';btn.classList.remove('saved')},2000);
+  showToast(apiUrl?'已儲存並同步至雲端':'已儲存到本機');
+}
+
+// ── load all ───────────────────────────────────────
+function loadAll(){
+  buildChecks('morning-checks',MORNING,'morning');
+  buildChecks('evening-checks',EVENING,'evening');
+  buildChecks('phase1-checks',PHASE1,'phase1');
+  buildChecks('phase2-checks',PHASE2,'phase2');
+  buildChecks('phase3-checks',PHASE3,'phase3');
+  buildChecks('sop-checks',SOP_LIST,'sop');
+  buildMonthTable();buildMetrics();buildFinance();loadTextFields();
+}
+
+// ── utils ──────────────────────────────────────────
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg+' ✓';
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800);
+}
+function copyText(id){
+  const text=document.getElementById(id).value;
+  navigator.clipboard.writeText(text).then(()=>showToast('已複製'))
+    .catch(()=>showToast('請長按文字框複製'));
+}
+function showAlarm(time,label){
+  document.getElementById('alarm-title').textContent='⏰ 設定 '+time+' 提醒';
+  document.getElementById('alarm-body').innerHTML=
+    '<strong>步驟：</strong><br>1. 打開 iPhone「時鐘」App<br>2. 點「鬧鐘」→「+」<br>3. 設定時間：<strong>'+time+'</strong><br>4. 點「標籤」→ 輸入：<strong>'+label+'</strong><br>5. 點「重複」→「每天」<br>6. 右上角「儲存」';
+  document.getElementById('alarm-modal').classList.add('open');
+}
+function closeModal(id,e){
+  if(!e||e.target.id===id)document.getElementById(id).classList.remove('open');
+}
+
+// ── init ───────────────────────────────────────────
+(function(){
+  loadAll();
+  // reset daily
+  const d=loadLocal();const today=new Date().toDateString();
+  if(d.lastDay!==today){
+    d.morning={};d.evening={};d.lastDay=today;d['today-task']='';d['today-note']='';
+    saveLocal(d);loadAll();
+  }
+  // api url display
+  if(apiUrl){
+    document.getElementById('api-url-display').textContent=apiUrl.substring(0,40)+'...';
+    document.getElementById('api-url-input').value=apiUrl;
+    setSyncStatus('loading','連線中...');
+    pullData();
+  }
+  const ls=localStorage.getItem('wanggong_last_sync');
+  if(ls){document.getElementById('last-sync-display').textContent=ls;document.getElementById('last-sync-label').textContent='最後同步：'+ls}
+  // warn before close if dirty
+  window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
+})();
+</script>
+</body>
+</html>
